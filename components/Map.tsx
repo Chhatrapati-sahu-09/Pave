@@ -80,6 +80,7 @@ export default function MapComponent({
   const mapRef = useRef<MapRef>(null);
 
   const [mapStyleName, setMapStyleName] = useState<'streets' | 'satellite'>('satellite');
+  const [userLocation, setUserLocation] = useState<{ lng: number; lat: number } | null>(null);
 
   const [viewState, setViewState] = useState({
     longitude: -74.0060, // Default NYC
@@ -94,11 +95,13 @@ export default function MapComponent({
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          const { longitude, latitude } = position.coords;
           setViewState({
-            longitude: position.coords.longitude,
-            latitude: position.coords.latitude,
+            longitude: longitude,
+            latitude: latitude,
             zoom: 14,
           });
+          setUserLocation({ lng: longitude, lat: latitude });
         },
         (error) => {
           console.warn('Geolocation access denied/failed, falling back to NYC default.', error);
@@ -106,6 +109,28 @@ export default function MapComponent({
       );
     }
   }, []);
+
+  const handleLocateUser = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { longitude, latitude } = position.coords;
+          setUserLocation({ lng: longitude, lat: latitude });
+          
+          if (mapRef.current) {
+            mapRef.current.getMap().easeTo({
+              center: [longitude, latitude],
+              zoom: 15,
+              duration: 600
+            });
+          }
+        },
+        (error) => {
+          alert("Could not retrieve your location. Make sure GPS/location services are enabled in your browser.");
+        }
+      );
+    }
+  };
 
   // Debounced viewport change triggers parent fetching
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -251,6 +276,25 @@ export default function MapComponent({
         style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" showCompass={false} />
+
+        {/* User Current Location Indicator (Blue Dot) */}
+        {userLocation && (
+          <Marker
+            longitude={userLocation.lng}
+            latitude={userLocation.lat}
+            anchor="center"
+          >
+            <div className="relative flex items-center justify-center h-6 w-6">
+              {/* Pulsing Halo */}
+              <div className="absolute inset-0 bg-[#0047FF]/35 rounded-full animate-ping" style={{ animationDuration: '3s' }} />
+              {/* Outer White Circle */}
+              <div className="h-4.5 w-4.5 bg-white rounded-full flex items-center justify-center shadow-[0_2px_4px_rgba(0,0,0,0.35)] border-2 border-white">
+                {/* Inner Blue Core */}
+                <div className="h-2.5 w-2.5 bg-[#0047FF] rounded-full" />
+              </div>
+            </div>
+          </Marker>
+        )}
 
         {/* Heatmap Mode Layers */}
         {viewMode === 'heatmap' && (
@@ -417,28 +461,29 @@ export default function MapComponent({
             Heatmap
           </button>
         </div>
+      </div>
 
-        {/* Segmented Map Style Switcher (Street vs Satellite) */}
-        <div className="flex border-2 border-black bg-white shadow-brutal-sm pointer-events-auto">
-          <button
-            onClick={() => setMapStyleName('streets')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold uppercase tracking-tight transition-all border-r border-black cursor-pointer ${
-              mapStyleName === 'streets' ? 'bg-[#0047FF] text-white' : 'bg-white hover:bg-zinc-100 text-[#0A0A0A]'
-            }`}
-          >
-            <MapIcon className="h-3.5 w-3.5" />
-            Street
-          </button>
-          <button
-            onClick={() => setMapStyleName('satellite')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold uppercase tracking-tight transition-all cursor-pointer ${
-              mapStyleName === 'satellite' ? 'bg-[#FF5500] text-white' : 'bg-white hover:bg-zinc-100 text-[#0A0A0A]'
-            }`}
-          >
-            <LayersIcon className="h-3.5 w-3.5" />
-            Satellite
-          </button>
-        </div>
+      {/* Floating Map Action Buttons (Right side - Google Maps style controls) */}
+      <div className="absolute top-24 right-4 z-10 flex flex-col gap-3 pointer-events-none">
+        {/* Locate Me Button */}
+        <button
+          onClick={handleLocateUser}
+          className="btn-brutal-sm p-3 bg-white hover:bg-zinc-100 flex items-center justify-center rounded-full pointer-events-auto shadow-brutal-sm border-2 border-black transition-all hover:scale-105 active:scale-95"
+          title="Show current location"
+        >
+          <Crosshair className="h-5 w-5 text-black stroke-[2.5]" />
+        </button>
+
+        {/* Satellite Toggle Button */}
+        <button
+          onClick={() => setMapStyleName(mapStyleName === 'streets' ? 'satellite' : 'streets')}
+          className={`btn-brutal-sm p-3 flex items-center justify-center rounded-full pointer-events-auto shadow-brutal-sm border-2 border-black transition-all hover:scale-105 active:scale-95 ${
+            mapStyleName === 'satellite' ? 'bg-[#FF5500] text-white hover:bg-[#FF7733]' : 'bg-white text-black hover:bg-zinc-100'
+          }`}
+          title="Toggle Satellite / Street Map"
+        >
+          <LayersIcon className="h-5 w-5 stroke-[2.5]" />
+        </button>
       </div>
 
       {/* Helper crosshair indicator in the center during Pin-Drop Mode */}
