@@ -61,25 +61,38 @@ export default function ReportForm({ lng, lat, onSubmitSuccess, onCancel }: Repo
 
       // 1. Upload photo if selected
       if (photoFile) {
-        const fileExt = photoFile.name.split('.').pop();
-        const fileName = `${user.id}/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-        const filePath = `${fileName}`;
+        const isSupabaseConfigured = 
+          process.env.NEXT_PUBLIC_SUPABASE_URL && 
+          process.env.NEXT_PUBLIC_SUPABASE_URL !== 'undefined' && 
+          process.env.NEXT_PUBLIC_SUPABASE_URL.trim() !== '' &&
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'undefined' &&
+          process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY.trim() !== '';
 
-        const { error: uploadError } = await supabase.storage
-          .from('report-photos')
-          .upload(filePath, photoFile);
+        if (!isSupabaseConfigured) {
+          // Use a local blob URL in mock mode to display the image on the client
+          photoUrl = URL.createObjectURL(photoFile);
+        } else {
+          const fileExt = photoFile.name.split('.').pop();
+          const fileName = `${user.id}/${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+          const filePath = `${fileName}`;
 
-        if (uploadError) {
-          console.error('Storage upload error:', uploadError);
-          throw new Error(`Photo upload failed: ${uploadError.message}`);
+          const { error: uploadError } = await supabase.storage
+            .from('report-photos')
+            .upload(filePath, photoFile);
+
+          if (uploadError) {
+            console.error('Storage upload error:', uploadError);
+            throw new Error(`Photo upload failed: ${uploadError.message}`);
+          }
+
+          // Get public URL
+          const { data: { publicUrl } } = supabase.storage
+            .from('report-photos')
+            .getPublicUrl(filePath);
+
+          photoUrl = publicUrl;
         }
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('report-photos')
-          .getPublicUrl(filePath);
-
-        photoUrl = publicUrl;
       }
 
       // 2. Submit report to our API

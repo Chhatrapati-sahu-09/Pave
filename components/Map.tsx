@@ -8,6 +8,31 @@ import { useAuth } from './AuthContext';
 import { ISSUE_TYPES, SEVERITIES, IssueType, SeverityLevel } from '@/lib/constants';
 import { Crosshair, Plus, Flame, Map as MapIcon, Layers as LayersIcon, MapPin, Loader2 } from 'lucide-react';
 
+const STREETS_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+
+const SATELLITE_STYLE = {
+  version: 8 as const,
+  sources: {
+    'satellite-tiles': {
+      type: 'raster' as const,
+      tiles: [
+        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+      ],
+      tileSize: 256,
+      attribution: 'Esri, Maxar, Earthstar Geographics'
+    }
+  },
+  layers: [
+    {
+      id: 'satellite-layer',
+      type: 'raster' as const,
+      source: 'satellite-tiles',
+      minzoom: 0,
+      maxzoom: 19
+    }
+  ]
+};
+
 interface Report {
   id: string;
   reporter_id: string;
@@ -53,6 +78,8 @@ export default function MapComponent({
 }: MapProps) {
   const { user } = useAuth();
   const mapRef = useRef<MapRef>(null);
+
+  const [mapStyleName, setMapStyleName] = useState<'streets' | 'satellite'>('satellite');
 
   const [viewState, setViewState] = useState({
     longitude: -74.0060, // Default NYC
@@ -219,7 +246,7 @@ export default function MapComponent({
         onMove={handleMapMove}
         onClick={handleMapClick}
         onLoad={() => setMapLoaded(true)}
-        mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+        mapStyle={mapStyleName === 'streets' ? STREETS_STYLE : SATELLITE_STYLE}
         cursor={isPinDropMode ? 'crosshair' : 'grab'}
         style={{ width: '100%', height: '100%' }}
       >
@@ -388,6 +415,28 @@ export default function MapComponent({
           >
             <Flame className="h-3.5 w-3.5" />
             Heatmap
+          </button>
+        </div>
+
+        {/* Segmented Map Style Switcher (Street vs Satellite) */}
+        <div className="flex border-2 border-black bg-white shadow-brutal-sm pointer-events-auto">
+          <button
+            onClick={() => setMapStyleName('streets')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold uppercase tracking-tight transition-all border-r border-black cursor-pointer ${
+              mapStyleName === 'streets' ? 'bg-[#0047FF] text-white' : 'bg-white hover:bg-zinc-100 text-[#0A0A0A]'
+            }`}
+          >
+            <MapIcon className="h-3.5 w-3.5" />
+            Street
+          </button>
+          <button
+            onClick={() => setMapStyleName('satellite')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-extrabold uppercase tracking-tight transition-all cursor-pointer ${
+              mapStyleName === 'satellite' ? 'bg-[#FF5500] text-white' : 'bg-white hover:bg-zinc-100 text-[#0A0A0A]'
+            }`}
+          >
+            <LayersIcon className="h-3.5 w-3.5" />
+            Satellite
           </button>
         </div>
       </div>

@@ -8,7 +8,7 @@ import FilterPanel from '@/components/FilterPanel';
 import ReportPanel from '@/components/ReportPanel';
 import ReportForm from '@/components/ReportForm';
 import { ISSUE_TYPES } from '@/lib/constants';
-import { LogIn, LogOut, Plus, SlidersHorizontal, MapPin, Check, ThumbsDown, Footprints } from 'lucide-react';
+import { LogIn, LogOut, Plus, MapPin, Check, ThumbsDown, Footprints } from 'lucide-react';
 
 interface Report {
   id: string;
@@ -44,7 +44,6 @@ export default function Home() {
   const [isLoadingReports, setIsLoadingReports] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isVoting, setIsVoting] = useState(false);
-  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [authSuccessCallback, setAuthSuccessCallback] = useState<(() => void) | null>(null);
 
   // Filters State
@@ -297,8 +296,8 @@ export default function Home() {
           
           {/* LEFT COLUMN: FILTERS & CONTROLS */}
           <div className="flex flex-col gap-3 items-start pointer-events-none max-w-full md:w-80 overflow-y-auto">
-            {/* Desktop Filters (Always visible on large screens) */}
-            <div className="hidden md:block pointer-events-auto w-full">
+            {/* Filters (Always visible on all screens) */}
+            <div className="pointer-events-auto w-full max-w-sm md:max-w-none">
               <FilterPanel
                 selectedTypes={selectedTypes}
                 onChangeTypes={setSelectedTypes}
@@ -306,27 +305,6 @@ export default function Home() {
                 onChangeSeverity={setMinSeverity}
               />
             </div>
-
-            {/* Mobile Filters Button (Launches filters drawer on small screens) */}
-            <button
-              onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="md:hidden btn-brutal-sm p-3 bg-white hover:bg-zinc-100 flex items-center gap-2 pointer-events-auto shadow-brutal-sm shrink-0 border-2 border-black"
-            >
-              <SlidersHorizontal className="h-4 w-4 text-[#0047FF]" />
-              <span className="font-space font-black text-xs">Filters</span>
-            </button>
-
-            {/* Mobile Filters Dropdown/Card */}
-            {showMobileFilters && (
-              <div className="md:hidden w-full pointer-events-auto animate-in slide-in-from-top duration-150">
-                <FilterPanel
-                  selectedTypes={selectedTypes}
-                  onChangeTypes={setSelectedTypes}
-                  minSeverity={minSeverity}
-                  onChangeSeverity={setMinSeverity}
-                />
-              </div>
-            )}
           </div>
 
           {/* RIGHT COLUMN: ACTION DRAWERS (Forms or report details) */}
