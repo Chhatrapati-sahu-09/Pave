@@ -1,0 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-bg-brutal: #F5F2EA;
+  --color-primary-brutal: #0047FF;
+  --color-accent-brutal: #FF3399; /* hot pink */
+  --color-pop-orange: #FF5500;
+  --color-severity-low: #A8FF60;
+  --color-severity-med: #FFD400;
+  --color-severity-high: #FF3366;
+  --color-border-brutal: #0A0A0A;
+  
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-space: 'Space Grotesk', system-ui, sans-serif;
+  
+  --shadow-brutal: 4px 4px 0px 0px #0A0A0A;
+  --shadow-brutal-sm: 2px 2px 0px 0px #0A0A0A;
+}
+
+:root {
+  --background: #F5F2EA;
+  --foreground: #0A0A0A;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Neo-Brutalist Utility and Component Styles */
+.border-brutal {
+  border: 3px solid #0A0A0A;
+}
+
+.border-brutal-sm {
+  border: 2px solid #0A0A0A;
+}
+
+.shadow-brutal {
+  box-shadow: 4px 4px 0px 0px #0A0A0A;
+}
+
+.shadow-brutal-sm {
+  box-shadow: 2px 2px 0px 0px #0A0A0A;
+}
+
+.btn-brutal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #0A0A0A;
+  box-shadow: 4px 4px 0px 0px #0A0A0A;
+  background-color: var(--color-primary-brutal);
+  color: #ffffff;
+  font-family: var(--font-space), sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+  transition: all 0.05s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-brutal:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0px 0px #0A0A0A;
+}
+
+.btn-brutal:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px 0px #0A0A0A;
+}
+
+.btn-brutal-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #0A0A0A;
+  box-shadow: 2px 2px 0px 0px #0A0A0A;
+  background-color: #ffffff;
+  color: #0A0A0A;
+  font-family: var(--font-space), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: all 0.05s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.btn-brutal-sm:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0px 0px #0A0A0A;
+}
+
+.btn-brutal-sm:active {
+  transform: translate(2px, 2px);
+  box-shadow: 0px 0px 0px 0px #0A0A0A;
+}
+
+.card-brutal {
+  border: 3px solid #0A0A0A;
+  box-shadow: 4px 4px 0px 0px #0A0A0A;
+  background-color: #ffffff;
+  transition: all 0.1s ease;
+}
+
+.input-brutal {
+  border: 2px solid #0A0A0A;
+  background-color: #ffffff;
+  font-family: var(--font-sans), sans-serif;
+  padding: 0.5rem 0.75rem;
+  transition: all 0.1s ease;
+}
+
+.input-brutal:focus {
+  outline: none;
+  border-color: var(--color-primary-brutal);
+  box-shadow: 2px 2px 0px 0px #0A0A0A;
+}
+
+.badge-brutal {
+  display: inline-block;
+  border: 2px solid #0A0A0A;
+  padding: 0.25rem 0.5rem;
+  font-weight: 800;
+  font-family: var(--font-space), sans-serif;
+  text-transform: uppercase;
+}
+
