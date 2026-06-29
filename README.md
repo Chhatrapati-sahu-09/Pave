@@ -1,5 +1,9 @@
 # Pave — Crowdsourced Sidewalk Accessibility Map
 
+<p align="center">
+  <img src="public/logo-pave.png" alt="Pave Logo" width="600" />
+</p>
+
 **Pave** is a full-stack, responsive web application that empowers individuals to report sidewalk and entrance accessibility issues (e.g. broken pavement, missing curb cuts, stairs without ramps, blocked paths, or steep grades). Other users can confirm or dispute reports, constructing a real-time, crowdsourced accessibility heatmap. Designed specifically for wheelchair users, parents with strollers, and anyone navigating a city who needs to know which routes are actually passable.
 
 ---
@@ -75,6 +79,30 @@
 5. **Crowdsourced Verification**: Users can vote "Still there" (confirm) or "Fixed / Not accurate" (dispute) to update report data.
 6. **Auto-Dispute Trigger**: When a report receives 3+ dispute votes and 1 or fewer confirm votes, its status is automatically updated to `disputed` via a PostgreSQL database trigger, and the map marker dims to represent inaccuracy.
 7. **Spatial Bounding Box Filtering**: Filters reports by active viewport boundaries and selections (categories, minimum severity slider) directly at the database layer using PostGIS.
+
+---
+
+## Screenshots
+
+Here are some screenshots showcasing Pave's interface, features, and Neo-Brutalist styling:
+
+### 1. Main Dashboard & Sidewalk Accessibility Map
+![Main Dashboard](public/screenshots/Screenshot%202026-06-29%20132147.png)
+
+### 2. Reporting an Issue
+![Reporting an Issue](public/screenshots/Screenshot%202026-06-29%20160205.png)
+
+### 3. Placing Location Pin on the Map
+![Placing Location Pin](public/screenshots/Screenshot%202026-06-29%20160219.png)
+
+### 4. Interactive Report Information & Crowdsourced Voting
+![Report Information](public/screenshots/Screenshot%202026-06-29%20160447.png)
+
+### 5. Heatmap View Toggle
+![Heatmap View](public/screenshots/Screenshot%202026-06-29%20162414.png)
+
+### 6. Neo-Brutalist Authentication Modal
+![Authentication Modal](public/screenshots/Screenshot%202026-06-29%20162420.png)
 
 ---
 
