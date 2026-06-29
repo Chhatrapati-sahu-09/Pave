@@ -60,6 +60,66 @@ export const mockReports: MockReport[] = [
     created_at: new Date(Date.now() - 3600000 * 2).toISOString(), // 2 hours ago
     confirm_count: 8,
     dispute_count: 0
+  },
+  {
+    id: 'user-requested-1',
+    reporter_id: 'mock-user-4',
+    reporter_name: 'RoadInspector',
+    location_lng: 81.271717,
+    location_lat: 21.167007,
+    issue_type: 'blocked_path',
+    severity: 2,
+    description: 'road construction is going on',
+    photo_url: null,
+    status: 'active',
+    created_at: new Date().toISOString(),
+    confirm_count: 0,
+    dispute_count: 0
+  },
+  {
+    id: 'user-requested-2',
+    reporter_id: 'mock-user-4',
+    reporter_name: 'RoadInspector',
+    location_lng: 81.284935,
+    location_lat: 21.169484,
+    issue_type: 'blocked_path',
+    severity: 2,
+    description: 'road construction is going on',
+    photo_url: null,
+    status: 'active',
+    created_at: new Date().toISOString(),
+    confirm_count: 0,
+    dispute_count: 0
+  },
+  {
+    id: 'user-requested-3',
+    reporter_id: 'mock-user-4',
+    reporter_name: 'RoadInspector',
+    location_lng: 81.298573,
+    location_lat: 21.179979,
+    issue_type: 'blocked_path',
+    severity: 2,
+    description: 'road construction is going on',
+    photo_url: null,
+    status: 'active',
+    created_at: new Date().toISOString(),
+    confirm_count: 0,
+    dispute_count: 0
+  },
+  {
+    id: 'user-requested-4',
+    reporter_id: 'mock-user-4',
+    reporter_name: 'RoadInspector',
+    location_lng: 81.315321,
+    location_lat: 21.178532,
+    issue_type: 'broken_pavement',
+    severity: 2,
+    description: 'Deep cracks and loose concrete chunks make navigation difficult.',
+    photo_url: '/demo-sidewalk.png',
+    status: 'active',
+    created_at: new Date().toISOString(),
+    confirm_count: 0,
+    dispute_count: 0
   }
 ];
 
@@ -68,8 +128,26 @@ export let mockUserVotes: Record<string, 'confirm' | 'dispute'> = {};
 
 // Helper to update a mock report's voting counts and status trigger
 export function voteMockReport(reportId: string, voteType: 'confirm' | 'dispute') {
-  const report = mockReports.find(r => r.id === reportId);
-  if (!report) return null;
+  let report = mockReports.find(r => r.id === reportId);
+  if (!report) {
+    // If not found in mockReports, it means it's a live database report.
+    // Create a placeholder for it so local voting can succeed.
+    report = {
+      id: reportId,
+      reporter_id: 'unknown-reporter',
+      location_lng: 0,
+      location_lat: 0,
+      issue_type: 'other',
+      severity: 1,
+      description: 'Live DB Report (Voting Local Fallback)',
+      photo_url: null,
+      status: 'active',
+      created_at: new Date().toISOString(),
+      confirm_count: 0,
+      dispute_count: 0
+    };
+    mockReports.push(report);
+  }
 
   const previousVote = mockUserVotes[reportId];
 

@@ -66,6 +66,42 @@ export async function GET() {
         description: 'Construction scaffolding blocking path.',
         photo_url: null,
         status: 'active'
+      },
+      {
+        reporter_id: null,
+        location: 'POINT(81.271717 21.167007)',
+        issue_type: 'blocked_path',
+        severity: 2,
+        description: 'road construction is going on',
+        photo_url: null,
+        status: 'active'
+      },
+      {
+        reporter_id: null,
+        location: 'POINT(81.284935 21.169484)',
+        issue_type: 'blocked_path',
+        severity: 2,
+        description: 'road construction is going on',
+        photo_url: null,
+        status: 'active'
+      },
+      {
+        reporter_id: null,
+        location: 'POINT(81.298573 21.179979)',
+        issue_type: 'blocked_path',
+        severity: 2,
+        description: 'road construction is going on',
+        photo_url: null,
+        status: 'active'
+      },
+      {
+        reporter_id: null,
+        location: 'POINT(81.315321 21.178532)',
+        issue_type: 'broken_pavement',
+        severity: 2,
+        description: 'Deep cracks and loose concrete chunks make navigation difficult.',
+        photo_url: '/demo-sidewalk.png',
+        status: 'active'
       }
     ];
 

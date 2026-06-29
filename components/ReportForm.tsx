@@ -82,16 +82,16 @@ export default function ReportForm({ lng, lat, onSubmitSuccess, onCancel }: Repo
             .upload(filePath, photoFile);
 
           if (uploadError) {
-            console.error('Storage upload error:', uploadError);
-            throw new Error(`Photo upload failed: ${uploadError.message}`);
+            console.warn('Storage upload failed, falling back to local object URL:', uploadError.message);
+            photoUrl = URL.createObjectURL(photoFile);
+          } else {
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('report-photos')
+              .getPublicUrl(filePath);
+
+            photoUrl = publicUrl;
           }
-
-          // Get public URL
-          const { data: { publicUrl } } = supabase.storage
-            .from('report-photos')
-            .getPublicUrl(filePath);
-
-          photoUrl = publicUrl;
         }
       }
 

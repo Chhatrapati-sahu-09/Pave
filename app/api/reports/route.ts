@@ -228,37 +228,78 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // LIVE DATABASE MODE
+    // LIVE DATABASE MODE (With Mock Fallback)
     // ==========================================
-    const supabase = await createClient();
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    // Fallback: If auth fails or user is not logged in live, let them post anonymously or mock
-    if (authError || !user) {
-      console.warn('Live Auth failed during post, inserting report anonymously');
-    }
+    try {
+      const supabase = await createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      // Fallback: If auth fails or user is not logged in live, let them post anonymously or mock
+      if (authError || !user) {
+        console.warn('Live Auth failed during post, inserting report anonymously');
+      }
 
-    const { data, error } = await supabase
-      .from('reports')
-      .insert([
-        {
-          reporter_id: user?.id || null,
-          location: `POINT(${lng} ${lat})`,
+      const { data, error } = await supabase
+        .from('reports')
+        .insert([
+          {
+            reporter_id: user?.id || null,
+            location: `POINT(${lng} ${lat})`,
+            issue_type,
+            severity: severityNum,
+            description: description || null,
+            photo_url: photo_url || null,
+            status: 'active',
+          },
+        ])
+        .select();
+
+      if (error) {
+        console.warn('Database INSERT error, falling back to mock database storage:', error.message);
+        
+        const mockNewReport = {
+          id: `mock-user-report-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+          reporter_id: user?.id || 'mock-reporter-id',
+          reporter_name: user?.email ? user.email.split('@')[0] : 'You (Mock)',
+          location_lng: parseFloat(lng),
+          location_lat: parseFloat(lat),
           issue_type,
           severity: severityNum,
           description: description || null,
           photo_url: photo_url || null,
           status: 'active',
-        },
-      ])
-      .select();
+          created_at: new Date().toISOString(),
+          confirm_count: 0,
+          dispute_count: 0
+        };
+        
+        mockReports.push(mockNewReport);
+        return NextResponse.json({ success: true, report: mockNewReport, fallback: true }, { status: 201 });
+      }
 
-    if (error) {
-      console.error('Database INSERT error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true, report: data?.[0] || null }, { status: 201 });
+    } catch (dbErr: any) {
+      console.warn('Database connection failed during POST, falling back to mock database storage:', dbErr.message);
+      
+      const mockNewReport = {
+        id: `mock-user-report-${Date.now()}-${Math.floor(Math.random()*1000)}`,
+        reporter_id: 'mock-reporter-id',
+        reporter_name: 'You (Mock)',
+        location_lng: parseFloat(lng),
+        location_lat: parseFloat(lat),
+        issue_type,
+        severity: severityNum,
+        description: description || null,
+        photo_url: photo_url || null,
+        status: 'active',
+        created_at: new Date().toISOString(),
+        confirm_count: 0,
+        dispute_count: 0
+      };
+      
+      mockReports.push(mockNewReport);
+      return NextResponse.json({ success: true, report: mockNewReport, fallback: true }, { status: 201 });
     }
-
-    return NextResponse.json({ success: true, report: data?.[0] || null }, { status: 201 });
   } catch (error: any) {
     console.error('API Error in POST /api/reports:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

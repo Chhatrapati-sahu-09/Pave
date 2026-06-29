@@ -78,7 +78,12 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
 
           if (profileError) {
             console.error('Profile creation failed:', profileError);
-            throw new Error('Account created, but failed to set display name. Please login to update.');
+            const isMissingTable = profileError.code === 'PGRST205' || profileError.message?.includes('profiles');
+            if (isMissingTable) {
+              console.warn('Profiles table not found in database. Proceeding without setting display name in DB.');
+            } else {
+              throw new Error('Account created, but failed to set display name. Please login to update.');
+            }
           }
         }
       } else {

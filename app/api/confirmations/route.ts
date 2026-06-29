@@ -115,12 +115,16 @@ export async function POST(request: Request) {
       )
       .select();
 
-    if (error) {
-      console.error('Database UPSERT error in confirmations:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+      if (error) {
+        console.warn('Database UPSERT error in confirmations, falling back to mock voting:', error.message);
+        const updatedReport = voteMockReport(report_id, vote);
+        if (!updatedReport) {
+          return NextResponse.json({ error: 'Report not found in mock database' }, { status: 404 });
+        }
+        return NextResponse.json({ success: true, confirmation: { report_id, vote }, fallback: true });
+      }
 
-    return NextResponse.json({ success: true, confirmation: data?.[0] || null });
+      return NextResponse.json({ success: true, confirmation: data?.[0] || null });
   } catch (error: any) {
     console.error('API Error in POST /api/confirmations:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -178,7 +178,8 @@ export default function Home() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to submit vote');
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to submit vote');
       }
 
       // Update local votes mapping
