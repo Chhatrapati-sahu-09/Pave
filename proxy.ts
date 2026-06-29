@@ -14,9 +14,12 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse;
   }
 
+  const cleanUrl = url.trim();
+  const cleanAnonKey = anonKey.trim();
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    cleanUrl,
+    cleanAnonKey,
     {
       cookies: {
         getAll() {

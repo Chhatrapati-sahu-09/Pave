@@ -8,8 +8,8 @@ export async function createClient() {
 
   const isConfigured = !!(url && url !== 'undefined' && url.trim() !== '' && anonKey && anonKey !== 'undefined' && anonKey.trim() !== '');
 
-  const finalUrl = isConfigured ? url : 'https://dummy-project.supabase.co';
-  const finalAnonKey = isConfigured ? anonKey : 'dummy-anon-key';
+  const finalUrl = isConfigured ? url.trim() : 'https://dummy-project.supabase.co';
+  const finalAnonKey = isConfigured ? anonKey.trim() : 'dummy-anon-key';
 
   return createServerClient(
     finalUrl,

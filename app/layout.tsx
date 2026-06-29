@@ -16,6 +16,7 @@ export default function RootLayout({
     <html
       lang="en"
       className="h-full antialiased"
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-[#F5F2EA] text-[#0A0A0A]">
         <AuthProvider>

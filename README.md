@@ -6,7 +6,8 @@
 
 ## Technical Stack
 
-- **Frontend**: Next.js 15+ (App Router) + TypeScript + Tailwind CSS v4
+- **Frontend**: Next.js 16 (App Router) + TypeScript + Tailwind CSS v4
+- **Next.js 16 Proxy**: Network-level boundary routing and session refreshing via `proxy.ts` (Next.js 16's standard replacement for `middleware.ts`)
 - **Styling**: Neo-Brutalist Visual Design (thick black borders, flat colors, offset drop shadows)
 - **Map**: Mapbox GL JS via `react-map-gl` (with custom client-side clustering via `supercluster` & native WebGL Heatmap layers)
 - **Backend & Database**: Next.js Server Route Handlers + Supabase (PostgreSQL with PostGIS extension + Row Level Security)
@@ -74,3 +75,13 @@
 5. **Crowdsourced Verification**: Users can vote "Still there" (confirm) or "Fixed / Not accurate" (dispute) to update report data.
 6. **Auto-Dispute Trigger**: When a report receives 3+ dispute votes and 1 or fewer confirm votes, its status is automatically updated to `disputed` via a PostgreSQL database trigger, and the map marker dims to represent inaccuracy.
 7. **Spatial Bounding Box Filtering**: Filters reports by active viewport boundaries and selections (categories, minimum severity slider) directly at the database layer using PostGIS.
+
+---
+
+## Troubleshooting & Gotchas
+
+### Hydration Mismatch Warnings from Browser Extensions
+If you see hydration error overlays or console warnings during local development like:
+`A tree hydrated but some attributes of the server rendered HTML didn't match the client properties...` with elements showing extension attributes (like `cz-shortcut-listen="true"` from ColorZilla or attributes from Grammarly/password managers), this has been handled. 
+
+The application uses **`suppressHydrationWarning`** on the root `<html>` element in [layout.tsx](file:///c:/Users/Sahu%20Ji/OneDrive/Desktop/REACT%20PROJECTS/PAVE/app/layout.tsx) to prevent React from throwing errors due to these client-side browser extension injections.
