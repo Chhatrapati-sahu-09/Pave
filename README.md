@@ -13,7 +13,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green" alt="License" /></a>
 </p>
 
-**Pave** is a full-stack, responsive web application that empowers individuals to report sidewalk and entrance accessibility issues (e.g. broken pavement, missing curb cuts, stairs without ramps, blocked paths, or steep grades). Other users can confirm or dispute reports, constructing a real-time, crowdsourced accessibility heatmap. Designed specifically for wheelchair users, parents with strollers, and anyone navigating a city who needs to know which routes are actually passable.
+**Pave** is a full-stack, responsive web application that empowers individuals to report sidewalk and entrance accessibility issues (e.g. broken pavement, missing curb cuts, stairs without ramps, blocked paths, or steep grades). Other users can confirm or dispute reports, constructing a real-time, crowdsourced accessibility heatmap. Designed specifically for wheelchair users, parents with strollers, and anyone navigating a city who needs to know which routes are actually passable. 
 
 ---
 
