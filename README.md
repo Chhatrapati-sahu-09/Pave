@@ -27,7 +27,6 @@
 - [Report Lifecycle](#report-lifecycle)
 - [Folder Structure](#folder-structure)
 - [Getting Started](#getting-started)
-- [Screenshots](#screenshots)
 - [Troubleshooting & Gotchas](#troubleshooting--gotchas)
 - [License](#license)
 - [Author](#author)
@@ -154,8 +153,7 @@ pave/
 │   └── supabase/         # Supabase Client initializations
 │       ├── client.ts     # Client-side Supabase client
 │       └── server.ts     # Server-side Next.js server client
-├── public/               # Static assets (Logo, screenshots, fallback photos)
-│   └── screenshots/      # Application workflow screenshots
+├── public/               # Static assets (Logo and fallback photos)
 ├── supabase/             # Supabase Configuration
 │   └── migrations/       # PostgreSQL initialization & storage SQL scripts
 ├── tsconfig.json         # TypeScript configuration
@@ -208,20 +206,6 @@ pave/
    npm run dev
    ```
 3. Open your browser and navigate to `http://localhost:3000`.
-
----
-
-## Screenshots
-
-Here are some screenshots showcasing Pave's interface, features, and Neo-Brutalist styling:
-
-| Main Dashboard & Map | Reporting an Issue |
-| :---: | :---: |
-| ![Main Dashboard](public/screenshots/Screenshot%202026-06-29%20132147.png) | ![Reporting an Issue](public/screenshots/Screenshot%202026-06-29%20160205.png) |
-| **Placing Location Pin** | **Interactive Report Panel & Voting** |
-| ![Placing Location Pin](public/screenshots/Screenshot%202026-06-29%20160219.png) | ![Report Information](public/screenshots/Screenshot%202026-06-29%20160447.png) |
-| **Heatmap View Toggle** | **Neo-Brutalist Sign In Modal** |
-| ![Heatmap View](public/screenshots/Screenshot%202026-06-29%20162414.png) | ![Authentication Modal](public/screenshots/Screenshot%202026-06-29%20162420.png) |
 
 ---
 
