@@ -160,12 +160,13 @@ export async function GET(request: Request) {
       }
 
       return NextResponse.json({ reports: data });
-    } catch (dbErr: any) {
-      console.warn('Database connection failed, falling back to mock data:', dbErr.message);
+    } catch (dbErr) {
+      const dbErrMsg = dbErr instanceof Error ? dbErr.message : 'Database error';
+      console.warn('Database connection failed, falling back to mock data:', dbErrMsg);
       const filteredMocks = getFilteredMockReports(minLng, minLat, maxLng, maxLat, issueTypes, minSeverity);
       return NextResponse.json({ reports: filteredMocks });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('API Error in GET /api/reports:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -278,8 +279,9 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json({ success: true, report: data?.[0] || null }, { status: 201 });
-    } catch (dbErr: any) {
-      console.warn('Database connection failed during POST, falling back to mock database storage:', dbErr.message);
+    } catch (dbErr) {
+      const dbErrMsg = dbErr instanceof Error ? dbErr.message : 'Database error';
+      console.warn('Database connection failed during POST, falling back to mock database storage:', dbErrMsg);
       
       const mockNewReport = {
         id: `mock-user-report-${Date.now()}-${Math.floor(Math.random()*1000)}`,
@@ -300,7 +302,7 @@ export async function POST(request: Request) {
       mockReports.push(mockNewReport);
       return NextResponse.json({ success: true, report: mockNewReport, fallback: true }, { status: 201 });
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('API Error in POST /api/reports:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

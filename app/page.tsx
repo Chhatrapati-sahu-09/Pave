@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/components/AuthContext';
 import AuthModal from '@/components/AuthModal';
 import MapComponent from '@/components/Map';
 import FilterPanel from '@/components/FilterPanel';
 import ReportPanel from '@/components/ReportPanel';
 import ReportForm from '@/components/ReportForm';
+import RoutePlanner from '@/components/RoutePlanner';
 import { ISSUE_TYPES } from '@/lib/constants';
-import { LogIn, LogOut, Plus, MapPin, Check, ThumbsDown, Footprints } from 'lucide-react';
+import { RouteCoordinate, generateManhattanPath, getPathLength, findObstaclesOnPath } from '@/lib/routing';
+import { LogIn, LogOut, Plus, Footprints } from 'lucide-react';
 
 interface Report {
   id: string;
@@ -50,8 +52,15 @@ export default function Home() {
   const [selectedTypes, setSelectedTypes] = useState<string[]>(Object.keys(ISSUE_TYPES));
   const [minSeverity, setMinSeverity] = useState<number>(1);
 
+  // Route Planner States
+  const [routeStart, setRouteStart] = useState<RouteCoordinate | null>(null);
+  const [routeEnd, setRouteEnd] = useState<RouteCoordinate | null>(null);
+  const [routeSelectMode, setRouteSelectMode] = useState<'start' | 'end' | null>(null);
+  const [routeAvoidObstacles, setRouteAvoidObstacles] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<'filter' | 'route'>('filter');
+
   // Fetch reports based on viewport bounds and filters
-  const fetchReports = async (bounds: [number, number, number, number]) => {
+  const fetchReports = useCallback(async (bounds: [number, number, number, number]) => {
     setIsLoadingReports(true);
     try {
       const [minLng, minLat, maxLng, maxLat] = bounds;
@@ -79,14 +88,16 @@ export default function Home() {
     } finally {
       setIsLoadingReports(false);
     }
-  };
+  }, [selectedTypes, minSeverity]);
 
   // Trigger fetch when bounds or filters change
   useEffect(() => {
     if (viewportBounds) {
-      fetchReports(viewportBounds);
+      Promise.resolve().then(() => {
+        fetchReports(viewportBounds);
+      });
     }
-  }, [viewportBounds, selectedTypes, minSeverity]);
+  }, [viewportBounds, fetchReports]);
 
   // Load user votes on authentication change
   useEffect(() => {
@@ -112,6 +123,61 @@ export default function Home() {
 
     fetchUserVotes();
   }, [user]);
+
+  // Listen for custom routing events (My Location GPS & coordinate clearing)
+  useEffect(() => {
+    const handleSetRouteCoord = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { target, lng, lat } = customEvent.detail;
+      
+      if (lng === undefined || lat === undefined) {
+        if (target === 'start') setRouteStart(null);
+        if (target === 'end') setRouteEnd(null);
+      } else {
+        if (target === 'start') setRouteStart({ lng, lat });
+        if (target === 'end') setRouteEnd({ lng, lat });
+      }
+    };
+
+    window.addEventListener('setRouteCoord', handleSetRouteCoord);
+    return () => window.removeEventListener('setRouteCoord', handleSetRouteCoord);
+  }, []);
+
+  // Compute Manhattan route path
+  const routePath = useMemo(() => {
+    if (!routeStart || !routeEnd) return [];
+    return generateManhattanPath(routeStart, routeEnd, routeAvoidObstacles);
+  }, [routeStart, routeEnd, routeAvoidObstacles]);
+
+  // Compute cumulative route path length in meters
+  const pathLength = useMemo(() => {
+    return getPathLength(routePath);
+  }, [routePath]);
+
+  // Detect accessibility issues lying near the path line
+  const obstacles = useMemo(() => {
+    if (routePath.length === 0 || reports.length === 0) return [];
+    return findObstaclesOnPath(routePath, reports);
+  }, [routePath, reports]);
+
+  // Calculate accessibility safety score
+  const routeScore = useMemo(() => {
+    let score = 100;
+    obstacles.forEach((warning) => {
+      const severity = warning.report.severity;
+      if (severity === 3) score -= 40;
+      else if (severity === 2) score -= 20;
+      else if (severity === 1) score -= 10;
+    });
+    return Math.max(0, score);
+  }, [obstacles]);
+
+  const handleSelectObstacle = (reportId: string) => {
+    const report = reports.find((r) => r.id === reportId);
+    if (report) {
+      setSelectedReport(report);
+    }
+  };
 
   // Handle map movement end
   const handleViewportChange = (bounds: [number, number, number, number]) => {
@@ -290,21 +356,72 @@ export default function Home() {
           viewMode={viewMode}
           setViewMode={setViewMode}
           isLoading={isLoadingReports}
+          routeStart={routeStart}
+          routeEnd={routeEnd}
+          routeSelectMode={routeSelectMode}
+          setRouteStart={setRouteStart}
+          setRouteEnd={setRouteEnd}
+          setRouteSelectMode={setRouteSelectMode}
+          routePath={routePath}
+          routeScore={routeScore}
         />
 
         {/* FLOATING ACTION PANELS (Overlaid on top of map) */}
         <div className="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between md:flex-row z-10">
           
-          {/* LEFT COLUMN: FILTERS & CONTROLS */}
-          <div className="flex flex-col gap-3 items-start pointer-events-none max-w-full md:w-80 overflow-y-auto">
-            {/* Filters (Always visible on all screens) */}
-            <div className="pointer-events-auto w-full max-w-sm md:max-w-none">
-              <FilterPanel
-                selectedTypes={selectedTypes}
-                onChangeTypes={setSelectedTypes}
-                minSeverity={minSeverity}
-                onChangeSeverity={setMinSeverity}
-              />
+          {/* LEFT COLUMN: FILTERS, PATH FINDING & CONTROLS */}
+          <div className="flex flex-col gap-1 items-start pointer-events-none max-w-full md:w-96 overflow-y-auto h-full">
+            
+            {/* Tab switch control (Neo-Brutalist segmented control) */}
+            <div className="pointer-events-auto flex border-3 border-black bg-white w-full max-w-sm md:max-w-none shadow-brutal mb-2 shrink-0">
+              <button
+                onClick={() => {
+                  setActiveTab('filter');
+                  setRouteSelectMode(null);
+                }}
+                className={`flex-1 py-2.5 text-xs font-black uppercase text-center cursor-pointer transition-all border-r-2 border-black ${
+                  activeTab === 'filter' ? 'bg-[#0047FF] text-white' : 'bg-white hover:bg-zinc-50'
+                }`}
+              >
+                Filter Map
+              </button>
+              <button
+                onClick={() => setActiveTab('route')}
+                className={`flex-1 py-2.5 text-xs font-black uppercase text-center cursor-pointer transition-all ${
+                  activeTab === 'route' ? 'bg-[#FF5500] text-white' : 'bg-white hover:bg-zinc-50'
+                }`}
+              >
+                Directions
+              </button>
+            </div>
+
+            {/* Conditionally render Active Sidebar Panel */}
+            <div className="pointer-events-auto w-full max-w-sm md:max-w-none flex-1 overflow-y-auto pb-4">
+              {activeTab === 'filter' ? (
+                <FilterPanel
+                  selectedTypes={selectedTypes}
+                  onChangeTypes={setSelectedTypes}
+                  minSeverity={minSeverity}
+                  onChangeSeverity={setMinSeverity}
+                />
+              ) : (
+                <RoutePlanner
+                  start={routeStart}
+                  end={routeEnd}
+                  selectMode={routeSelectMode}
+                  setSelectMode={setRouteSelectMode}
+                  clearRoute={() => {
+                    setRouteStart(null);
+                    setRouteEnd(null);
+                    setRouteSelectMode(null);
+                  }}
+                  obstacles={obstacles}
+                  avoidObstacles={routeAvoidObstacles}
+                  setAvoidObstacles={setRouteAvoidObstacles}
+                  pathLength={pathLength}
+                  onSelectObstacle={handleSelectObstacle}
+                />
+              )}
             </div>
           </div>
 
@@ -362,6 +479,20 @@ export default function Home() {
                 className="btn-brutal-sm px-4 py-2 bg-white text-black text-xs font-black uppercase shadow-brutal-sm border-2 border-black"
               >
                 Cancel Report Mode
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Exit Banner during Route Selection mode */}
+        {routeSelectMode && (
+          <div className="absolute top-18 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-1">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRouteSelectMode(null)}
+                className="btn-brutal-sm px-4 py-2 bg-white text-black text-xs font-black uppercase shadow-brutal-sm border-2 border-black"
+              >
+                Cancel Selection Mode
               </button>
             </div>
           </div>

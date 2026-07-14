@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ votes: data || [] });
-  } catch (error: any) {
+  } catch (error) {
     console.error('API Error in GET /api/confirmations:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
       }
 
       return NextResponse.json({ success: true, confirmation: data?.[0] || null });
-  } catch (error: any) {
+  } catch (error) {
     console.error('API Error in POST /api/confirmations:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

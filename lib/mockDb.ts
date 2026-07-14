@@ -124,7 +124,7 @@ export const mockReports: MockReport[] = [
 ];
 
 // Stores the mock votes in the format { [report_id]: 'confirm' | 'dispute' }
-export let mockUserVotes: Record<string, 'confirm' | 'dispute'> = {};
+export const mockUserVotes: Record<string, 'confirm' | 'dispute'> = {};
 
 // Helper to update a mock report's voting counts and status trigger
 export function voteMockReport(reportId: string, voteType: 'confirm' | 'dispute') {

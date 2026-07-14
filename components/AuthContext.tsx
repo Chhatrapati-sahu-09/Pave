@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { User } from '@supabase/supabase-js';
 
@@ -49,7 +49,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       user_metadata: { display_name: name || 'Mock User' },
       aud: 'authenticated',
       created_at: new Date().toISOString()
-    } as any;
+    } as unknown as User;
 
     const mockProfile = {
       id: 'mock-reporter-id',
@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('pave_mock_user', JSON.stringify({ user: mockUser, profile: mockProfile }));
   };
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -78,9 +78,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('Error fetching profile:', err);
       setProfile(null);
     }
-  };
+  }, [supabase]);
 
-  const refreshSession = async () => {
+  const refreshSession = useCallback(async () => {
     if (!isSupabaseConfigured) {
       const saved = localStorage.getItem('pave_mock_user');
       if (saved) {
@@ -112,23 +112,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isSupabaseConfigured, supabase, fetchProfile]);
 
   useEffect(() => {
     if (!isSupabaseConfigured) {
       const saved = localStorage.getItem('pave_mock_user');
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          setUser(parsed.user);
-          setProfile(parsed.profile);
-        } catch {}
-      }
-      setLoading(false);
+      Promise.resolve().then(() => {
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            setUser(parsed.user);
+            setProfile(parsed.profile);
+          } catch {}
+        }
+        setLoading(false);
+      });
       return;
     }
 
-    refreshSession();
+    Promise.resolve().then(() => refreshSession());
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -146,7 +148,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [isSupabaseConfigured, supabase, refreshSession, fetchProfile]);
 
   const signOut = async () => {
     setLoading(true);

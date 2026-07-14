@@ -6,10 +6,26 @@ import { ISSUE_TYPES, SEVERITIES, IssueType, SeverityLevel } from '@/lib/constan
 import { Camera, X, Loader2 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 
+interface FormReport {
+  id: string;
+  reporter_id: string;
+  reporter_name?: string;
+  location_lng: number;
+  location_lat: number;
+  issue_type: string;
+  severity: number;
+  description: string | null;
+  photo_url: string | null;
+  status: string;
+  created_at: string;
+  confirm_count: number;
+  dispute_count: number;
+}
+
 interface ReportFormProps {
   lng: number;
   lat: number;
-  onSubmitSuccess: (newReport: any) => void;
+  onSubmitSuccess: (newReport: FormReport) => void;
   onCancel: () => void;
 }
 
@@ -133,8 +149,9 @@ export default function ReportForm({ lng, lat, onSubmitSuccess, onCancel }: Repo
         confirm_count: 0,
         dispute_count: 0,
       });
-    } catch (err: any) {
-      setErrorMsg(err.message || 'An unexpected error occurred during submission');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred during submission';
+      setErrorMsg(msg);
       setIsSubmitting(false);
     }
   };

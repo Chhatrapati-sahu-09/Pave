@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { ISSUE_TYPES, SEVERITIES, IssueType, SeverityLevel } from '@/lib/constants';
-import { SlidersHorizontal, Check } from 'lucide-react';
+import { ISSUE_TYPES, SEVERITIES, SeverityLevel } from '@/lib/constants';
+import { SlidersHorizontal } from 'lucide-react';
 
 interface FilterPanelProps {
   selectedTypes: string[];

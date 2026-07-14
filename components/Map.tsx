@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import MapGL, { Marker, Source, Layer, NavigationControl, MapRef } from 'react-map-gl/maplibre';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import Supercluster from 'supercluster';
-import { useAuth } from './AuthContext';
 import { ISSUE_TYPES, SEVERITIES, IssueType, SeverityLevel } from '@/lib/constants';
-import { Crosshair, Plus, Flame, Map as MapIcon, Layers as LayersIcon, MapPin, Loader2 } from 'lucide-react';
+import { RouteCoordinate } from '@/lib/routing';
+import { Crosshair, Flame, Layers as LayersIcon, MapPin, Loader2 } from 'lucide-react';
 
 const STREETS_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
 
@@ -61,6 +61,14 @@ interface MapProps {
   viewMode: 'pins' | 'heatmap';
   setViewMode: (mode: 'pins' | 'heatmap') => void;
   isLoading: boolean;
+  routeStart: RouteCoordinate | null;
+  routeEnd: RouteCoordinate | null;
+  routeSelectMode: 'start' | 'end' | null;
+  setRouteStart: (coord: RouteCoordinate | null) => void;
+  setRouteEnd: (coord: RouteCoordinate | null) => void;
+  setRouteSelectMode: (mode: 'start' | 'end' | null) => void;
+  routePath: RouteCoordinate[];
+  routeScore: number;
 }
 
 export default function MapComponent({
@@ -69,14 +77,20 @@ export default function MapComponent({
   onSelectReport,
   selectedReport,
   isPinDropMode,
-  setIsPinDropMode,
   tempPin,
   setTempPin,
   viewMode,
   setViewMode,
   isLoading,
+  routeStart,
+  routeEnd,
+  routeSelectMode,
+  setRouteStart,
+  setRouteEnd,
+  setRouteSelectMode,
+  routePath,
+  routeScore,
 }: MapProps) {
-  const { user } = useAuth();
   const mapRef = useRef<MapRef>(null);
 
   const [mapStyleName, setMapStyleName] = useState<'streets' | 'satellite'>('satellite');
@@ -89,6 +103,7 @@ export default function MapComponent({
   });
 
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [currentBounds, setCurrentBounds] = useState<[number, number, number, number] | null>(null);
 
   // Get user geolocation on mount
   useEffect(() => {
@@ -125,7 +140,7 @@ export default function MapComponent({
             });
           }
         },
-        (error) => {
+        () => {
           alert("Could not retrieve your location. Make sure GPS/location services are enabled in your browser.");
         }
       );
@@ -135,7 +150,7 @@ export default function MapComponent({
   // Debounced viewport change triggers parent fetching
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   
-  const handleMapMove = (evt?: any) => {
+  const handleMapMove = useCallback((evt?: { viewState: { longitude: number; latitude: number; zoom: number } }) => {
     if (evt) {
       setViewState(evt.viewState);
     }
@@ -153,16 +168,17 @@ export default function MapComponent({
       const minLat = boundsObj.getSouth();
       const maxLng = boundsObj.getEast();
       const maxLat = boundsObj.getNorth();
-      onViewportChange([minLng, minLat, maxLng, maxLat]);
+      const boundsArr: [number, number, number, number] = [minLng, minLat, maxLng, maxLat];
+      setCurrentBounds(boundsArr);
+      onViewportChange(boundsArr);
     }, 400); // 400ms debounce
-  };
+  }, [onViewportChange]);
 
-  // Run initial fetch when map is loaded
   useEffect(() => {
-    if (mapLoaded && mapRef.current) {
-      handleMapMove();
+    if (mapLoaded) {
+      Promise.resolve().then(() => handleMapMove());
     }
-  }, [mapLoaded]);
+  }, [mapLoaded, handleMapMove]);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -199,25 +215,27 @@ export default function MapComponent({
 
   // Compute clusters for current viewport
   const clusters = useMemo(() => {
-    if (!mapRef.current || viewMode === 'heatmap') return [];
+    if (!currentBounds || viewMode === 'heatmap') return [];
     try {
-      const map = mapRef.current.getMap();
-      const bounds = map.getBounds();
-      if (!bounds) return [];
-      const bbox: [number, number, number, number] = [
-        bounds.getWest(),
-        bounds.getSouth(),
-        bounds.getEast(),
-        bounds.getNorth(),
-      ];
-      return superclusterIndex.getClusters(bbox, Math.round(viewState.zoom));
-    } catch (e) {
+      return superclusterIndex.getClusters(currentBounds, Math.round(viewState.zoom));
+    } catch {
       return [];
     }
-  }, [superclusterIndex, viewState.zoom, viewState.longitude, viewState.latitude, viewMode]);
+  }, [superclusterIndex, viewState.zoom, currentBounds, viewMode]);
 
   // Handle map click
-  const handleMapClick = (e: any) => {
+  const handleMapClick = (e: { lngLat: { lng: number; lat: number } }) => {
+    if (routeSelectMode) {
+      const { lng, lat } = e.lngLat;
+      if (routeSelectMode === 'start') {
+        setRouteStart({ lng, lat });
+      } else {
+        setRouteEnd({ lng, lat });
+      }
+      setRouteSelectMode(null);
+      return;
+    }
+
     if (isPinDropMode) {
       const { lng, lat } = e.lngLat;
       setTempPin({ lng, lat });
@@ -235,7 +253,7 @@ export default function MapComponent({
         zoom: Math.min(expansionZoom, 17),
         duration: 400,
       });
-    } catch (err) {
+    } catch {
       // expansionZoom might fail if cluster details are stale
       map.easeTo({
         center: [longitude, latitude],
@@ -262,6 +280,19 @@ export default function MapComponent({
     };
   }, [reports]);
 
+  // GeoJSON data format for Route Path line
+  const routeGeojson = useMemo(() => {
+    if (!routePath || routePath.length < 2) return null;
+    return {
+      type: 'Feature' as const,
+      geometry: {
+        type: 'LineString' as const,
+        coordinates: routePath.map((c) => [c.lng, c.lat]),
+      },
+      properties: {},
+    };
+  }, [routePath]);
+
   return (
     <div className="relative flex-1 w-full h-full overflow-hidden border-3 border-black shadow-brutal bg-[#E0DFDB]">
       {/* MapLibre Map Canvas */}
@@ -272,7 +303,7 @@ export default function MapComponent({
         onClick={handleMapClick}
         onLoad={() => setMapLoaded(true)}
         mapStyle={mapStyleName === 'streets' ? STREETS_STYLE : SATELLITE_STYLE}
-        cursor={isPinDropMode ? 'crosshair' : 'grab'}
+        cursor={routeSelectMode ? 'crosshair' : isPinDropMode ? 'crosshair' : 'grab'}
         style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" showCompass={false} />
@@ -346,7 +377,7 @@ export default function MapComponent({
         {viewMode === 'pins' &&
           clusters.map((cluster) => {
             const [longitude, latitude] = cluster.geometry.coordinates;
-            const { cluster: isCluster, point_count: pointCount, reportId, report } = cluster.properties;
+            const { cluster: isCluster, point_count: pointCount, report } = cluster.properties;
 
             if (isCluster) {
               // Bubble Cluster marker
@@ -428,6 +459,71 @@ export default function MapComponent({
             </div>
           </Marker>
         )}
+
+        {/* Route Line Render */}
+        {routeGeojson && (
+          <Source id="route-path-src" type="geojson" data={routeGeojson}>
+            <Layer
+              id="route-path-casing"
+              type="line"
+              paint={{
+                'line-color': '#0A0A0A',
+                'line-width': 8,
+                'line-opacity': 0.9,
+                'line-join': 'round',
+                'line-cap': 'round',
+              }}
+            />
+            <Layer
+              id="route-path-line"
+              type="line"
+              paint={{
+                'line-color': 
+                  routeScore >= 80 
+                    ? '#A8FF60' 
+                    : routeScore >= 45 
+                      ? '#FFD400' 
+                      : '#FF3366',
+                'line-width': 4,
+                'line-opacity': 1.0,
+                'line-join': 'round',
+                'line-cap': 'round',
+              }}
+            />
+          </Source>
+        )}
+
+        {/* Route Start Point Marker */}
+        {routeStart && (
+          <Marker
+            longitude={routeStart.lng}
+            latitude={routeStart.lat}
+            anchor="bottom"
+          >
+            <div className="flex flex-col items-center justify-center pointer-events-auto">
+              <div className="flex items-center justify-center h-7 w-7 bg-[#A8FF60] border-2 border-black font-space font-black text-xs text-[#0A0A0A] shadow-brutal-sm rounded-full select-none">
+                S
+              </div>
+              <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-black z-[-1]" />
+            </div>
+          </Marker>
+        )}
+
+        {/* Route End Point Marker */}
+        {routeEnd && (
+          <Marker
+            longitude={routeEnd.lng}
+            latitude={routeEnd.lat}
+            anchor="bottom"
+          >
+            <div className="flex flex-col items-center justify-center pointer-events-auto">
+              <div className="flex items-center justify-center h-7 w-7 bg-[#FF3399] border-2 border-black font-space font-black text-xs text-white shadow-brutal-sm rounded-full select-none">
+                E
+              </div>
+              <div className="w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-t-[6px] border-t-black z-[-1]" />
+            </div>
+          </Marker>
+        )}
       </MapGL>
 
       {/* Floating Map Controls overlay */}
@@ -495,6 +591,19 @@ export default function MapComponent({
           <div className="relative">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 border-2 border-dashed border-[#FF3366] rounded-full" />
             <Crosshair className="h-10 w-10 text-[#FF3366] stroke-[2.5]" />
+          </div>
+        </div>
+      )}
+
+      {/* Helper map click indicator during Route Select Mode */}
+      {routeSelectMode && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 select-none">
+          <div className="card-brutal p-3 bg-[#FFD400] text-xs font-black uppercase text-[#0A0A0A] shadow-brutal border-2 border-black max-w-xs text-center leading-4 select-none mb-4 animate-pulse">
+            📍 CLICK ANYWHERE ON THE MAP TO SET ROUTE {routeSelectMode === 'start' ? 'START' : 'DESTINATION'}
+          </div>
+          <div className="relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-8 border-2 border-dashed border-[#0047FF] rounded-full" />
+            <Crosshair className="h-10 w-10 text-[#0047FF] stroke-[2.5]" />
           </div>
         </div>
       )}

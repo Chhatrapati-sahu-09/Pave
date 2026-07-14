@@ -99,8 +99,9 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
       // Success
       if (onSuccess) onSuccess();
       onClose();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'An unexpected error occurred');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred';
+      setErrorMsg(msg);
     } finally {
       setIsLoading(false);
     }
