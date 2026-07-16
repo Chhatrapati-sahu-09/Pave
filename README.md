@@ -197,7 +197,7 @@ pave/
    NEXT_PUBLIC_MAPBOX_TOKEN=your-mapbox-public-token-here
    ```
 
-### 4. Running the Project Locally
+### 4. Running the Project Locally 
 
 1. Install dependencies (if not already done):
    ```bash
@@ -234,6 +234,13 @@ If you see hydration error overlays or console warnings during local development
 The application uses **`suppressHydrationWarning`** on both the root `<html>` and `<body>` elements in [layout.tsx](file:///c:/Users/Sahu%20Ji/OneDrive/Desktop/REACT%20PROJECTS/PAVE/app/layout.tsx) to prevent React from throwing errors due to these client-side browser extension injections.
 
 ---
+
+| Variable | Description |
+|----------|-------------|
+| NEXT_PUBLIC_SUPABASE_URL | Supabase URL |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | Public API Key |
+| SUPABASE_SERVICE_ROLE_KEY | Service Role |
+| NEXT_PUBLIC_MAPBOX_TOKEN | Map Token |
 
 ## License
 
